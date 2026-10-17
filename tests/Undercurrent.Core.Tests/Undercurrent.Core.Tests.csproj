@@ -8,6 +8,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+    <!-- Run on newer .NET runtimes too (for example, .NET 10 from Homebrew). -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>

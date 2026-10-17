@@ -22,7 +22,7 @@ data/                        every tuning number and definition
 
 ## Run it
 
-Needs the .NET 8 SDK or newer.
+Needs the .NET 8 SDK or newer (the .NET 10 SDK that comes with Homebrew's Godot works). The library targets net8.0 for Godot compatibility; the test and simulator programs roll forward to newer runtimes.
 
 ```
 dotnet build
