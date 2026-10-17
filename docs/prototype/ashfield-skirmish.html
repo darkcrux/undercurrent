@@ -1,0 +1,985 @@
+<title>Ashfield Skirmish</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Alegreya+Sans:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: the battlefield on the left, a command ledger on the right; stacks on phones.
+   Deliberately one dark, soot-and-brass world, like a field table lit by a lamp. */
+:root{
+  --bg:#15130f; --panel:#1d1a15; --panel2:#262119; --line:#3a3228; --ink:#ece3d2; --muted:#a6997f;
+  --brass:#d3a44f; --verd:#63b5a2; --rust:#d05b3f; --violet:#a597e2; --blood:#cc3e4e; --steel:#9ea7ac;
+  --f-display:"IM Fell English SC", Georgia, "Times New Roman", serif;
+  --f-body:"Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 32px;
+  background:radial-gradient(1200px 600px at 30% -10%, #2a2419 0%, var(--bg) 60%) fixed, var(--bg)}
+.wrap{max-width:1200px;margin:0 auto;display:grid;gap:18px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
+.eyebrow{margin:0;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+h1{margin:2px 0 0;font-family:var(--f-display);font-weight:400;font-size:clamp(28px,4vw,40px);line-height:1.05;letter-spacing:.02em;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--muted);max-width:60ch}
+h2{margin:0 0 8px;font-family:var(--f-mono);font-weight:500;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+button{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:7px 10px;cursor:pointer;text-align:left}
+button:hover:not(:disabled){border-color:var(--brass)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.on{border-color:var(--brass);background:#3a2f1c}
+.ghost{background:transparent}
+.game{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:18px;align-items:start}
+@media (max-width:920px){.game{grid-template-columns:minmax(0,1fr)}}
+.field{min-width:0;display:grid;gap:10px}
+.board-wrap{position:relative;background:linear-gradient(180deg,#1b1813,#12100d);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+canvas{display:block;width:100%;height:auto;aspect-ratio:560/380;max-width:100%;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid currentColor}
+.side{display:grid;gap:12px;min-width:0}
+.block{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
+#order{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+#order li{display:flex;align-items:center;gap:6px;font-size:13px;padding:3px 8px 3px 3px;border-radius:999px;background:var(--panel2);border:1px solid var(--line)}
+#order li.now{border-color:var(--brass)}
+#order li .g{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-mono);font-size:11px;color:#15130f;font-weight:500}
+#order li.player .g{box-shadow:0 0 0 2px var(--verd)}
+#order li.enemy .g{box-shadow:0 0 0 2px var(--rust)}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.glyph{width:34px;height:34px;border-radius:6px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:500;color:#15130f;flex:none}
+.card-head b{font-family:var(--f-display);font-weight:400;font-size:20px;display:block;line-height:1.1}
+.card-head small{color:var(--muted);font-size:13px}
+.tag{margin-left:auto;font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:3px;border:1px solid currentColor}
+.tag.p{color:var(--verd)} .tag.e{color:var(--rust)}
+.bar{position:relative;height:18px;background:#0f0d0a;border:1px solid var(--line);border-radius:3px;margin:5px 0;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;display:block}
+.bar span{position:relative;font-family:var(--f-mono);font-size:11px;padding-left:6px;line-height:16px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.chip{font-family:var(--f-mono);font-size:10.5px;padding:2px 6px;border-radius:3px;background:var(--panel2);border:1px solid var(--line)}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px 8px;margin:8px 0 0;font-family:var(--f-mono);font-size:12px;font-variant-numeric:tabular-nums}
+.stats div{display:flex;justify-content:space-between;gap:4px;border-bottom:1px dotted var(--line)}
+.stats dt{color:var(--muted)} .stats dd{margin:0}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}
+.actions button small{display:block;color:var(--muted);font-size:12px;line-height:1.2}
+.actions .wide{grid-column:1/-1}
+.facing{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
+.facing button{text-align:center;font-size:20px;padding:6px}
+.hint{margin:8px 0 0;font-size:13px;color:var(--muted)}
+.chan{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13px;color:var(--ink);background:#221d2c;border:1px solid #3d3552;border-radius:4px;padding:7px}
+.pv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
+.pv div{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:6px 8px}
+.pv small{display:block;color:var(--muted);font-size:11px;font-family:var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.pv b{font-family:var(--f-mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.pv em{display:block;font-style:normal;font-size:12px;color:var(--muted)}
+.counter{border-left:3px solid var(--verd);padding:6px 8px;background:#18201d;border-radius:0 4px 4px 0;font-size:14px}
+.counter.none{border-color:var(--line);background:var(--panel2);color:var(--muted)}
+.counter b{font-family:var(--f-mono);font-weight:500}
+.note{font-size:13px;color:var(--muted);margin:6px 0 0}
+.note.warn{color:#e3a0a0}
+.multi{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px}
+.multi li{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:5px 7px}
+#log{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;display:grid;gap:3px;font-size:13px}
+#log li{color:var(--muted);border-bottom:1px solid #26211a;padding-bottom:3px}
+#log li.good{color:#9fd3c4} #log li.bad{color:#e7a08f} #log li.key{color:var(--ink)}
+.over{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,9,7,.72);text-align:center;padding:16px}
+.over div{max-width:34ch}
+.over b{display:block;font-family:var(--f-display);font-weight:400;font-size:34px;margin-bottom:6px}
+.rules{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.rules summary{cursor:pointer;font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 20px;margin-top:10px;font-size:14px}
+.rules-grid h3{margin:0 0 4px;font-family:var(--f-display);font-weight:400;font-size:18px}
+.rules-grid p,.rules-grid ul{margin:0;color:var(--muted)}
+.rules-grid ul{padding-left:18px}
+.mono{font-family:var(--f-mono);font-size:.92em}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Combat prototype · build 0.1</p>
+      <h1>Ashfield Skirmish</h1>
+      <p class="sub">Four of your company against four hostiles. Every attack in reach can draw a counter; read the preview before you commit.</p>
+    </div>
+    <button id="restart" class="ghost">Restart battle</button>
+  </header>
+
+  <main class="game">
+    <section class="field">
+      <div class="board-wrap">
+        <canvas id="board" width="560" height="380" aria-label="Isometric battlefield"></canvas>
+        <div id="over" class="over" hidden></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="color:var(--verd)"></i>Your company</span>
+        <span><i class="dot" style="color:var(--rust)"></i>Hostiles</span>
+        <span>The small wedge at each unit's feet shows its facing</span>
+        <span>Hover a unit to see its vision</span>
+        <span>Esc or right-click cancels</span>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="block"><h2>Turn order</h2><ol id="order"></ol></div>
+      <div class="block" id="activeBlock"></div>
+      <div class="block" id="previewBlock"></div>
+      <div class="block"><h2>Battle log</h2><ol id="log"></ol></div>
+    </aside>
+  </main>
+
+  <details class="rules">
+    <summary>Rules and numbers in this test</summary>
+    <div class="rules-grid">
+      <div><h3>Turns</h3><p>Each unit's wait fills by SPD minus gear weight; at 100 it acts. Move and act in either order. Doing both costs 100 wait, one costs 80, neither costs 60. Pick a facing at the end.</p></div>
+      <div><h3>Hit chance</h3><p><span class="mono">HIT − (target SPD − 10) × 2</span>, +10 from the flank, +20 from behind, kept between 0% and 100%.</p></div>
+      <div><h3>Damage</h3><p><span class="mono">ATK × power × 100 ÷ (100 + DEF)</span>, or ATN against RES for elemental abilities. Crit chance is LUK ÷ 2 (+25 from Hidden); a crit doubles damage.</p></div>
+      <div><h3>Counters</h3><p>75% front, 50% flank, 25% back. −10% per level the attacker stands above. Braced +25%. A crit halves it. Hidden attackers, Suppressed or Stunned defenders, and attackers outside the defender's weapon reach draw no counter. Counters deal 50% (75% when Braced) and always land.</p></div>
+      <div><h3>Resources</h3><ul><li>Mercenary line: cooldowns</li><li>Gunner: Charge, starts full, never refills</li><li>Elementalist: Focus, starts at 0, +20 a turn</li><li>Bloodcaller: Resonance, starts at 50, +6 a turn; when short, pays the rest in HP for +25% damage and a Strained stack (+10% damage each; 5 stacks means Burnout for 2 turns)</li></ul></div>
+      <div><h3>Hidden</h3><p>A Hidden unit can't be targeted directly, by attacks, single-target abilities or turrets, unless it is <b>spotted</b>: inside an enemy's vision, which covers 2 tiles ahead, the front diagonals and 2 tiles to each side, but nothing behind. It works both ways: walking into a cone or an enemy turning to face you both spot you. Hover a unit to see its vision. A spotted unit keeps Hidden's advantages. Area abilities (Suppressing Fire, Flame Burst) always hit it, and a hit reveals it. Hidden attackers draw no counter and get +25 crit. Attacking ends Hidden.</p></div>
+      <div><h3>Not in this test</h3><p>Revives, items, towns, class changes and exact final numbers. Fallen units show a 3-turn countdown (Normal difficulty) but can't be saved yet. Area abilities only hit enemies.</p></div>
+    </div>
+  </details>
+</div>
+
+<script>
+(() => {
+const N = 8, TW = 64, TH = 32, HS = 14, CW = 560, CH = 380, OX = CW / 2, OY = 76;
+const HMAP = [
+  [0,0,0,1,1,0,0,0],
+  [0,0,1,1,1,1,0,0],
+  [0,0,1,2,2,1,0,0],
+  [1,1,1,2,3,1,0,0],
+  [0,0,1,1,1,1,1,1],
+  [0,0,0,0,1,2,2,1],
+  [0,1,0,0,0,1,2,1],
+  [0,0,0,0,0,0,1,0],
+];
+const COL = { verd:'#63b5a2', rust:'#d05b3f', brass:'#d3a44f', violet:'#a597e2', blood:'#cc3e4e', steel:'#9ea7ac', ink:'#ece3d2', muted:'#a6997f' };
+const FAC = { merc: COL.steel, tech: COL.brass, magic: COL.violet, unbound: COL.blood };
+const RES_NAME = { cd:'Cooldowns', charge:'Charge', focus:'Focus', res:'Resonance' };
+const DIRS = [ {x:0,y:-1,a:'↗'}, {x:1,y:0,a:'↘'}, {x:0,y:1,a:'↙'}, {x:-1,y:0,a:'↖'} ];
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? Math.min(ms, 120) : ms));
+const hAt = (x, y) => HMAP[y][x];
+const inb = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+const K = (x, y) => x + ',' + y;
+const md = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const scr = (x, y) => ({ x: OX + (x - y) * TW / 2, y: OY + (x + y) * TH / 2 - hAt(x, y) * HS });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const DEFS = {
+  vanguard:     { name:'Vanguard', line:'Mercenary line', fac:'merc', glyph:'V', hp:120, ATK:30, DEF:30, ATN:8,  RES:16, HIT:90, SPD:12, LUK:8,  MOVE:3, JUMP:1, WT:3, reach:[1,1], rk:'cd', passives:['parry'], abil:['attack','bash','guard','challenge'] },
+  gunner:       { name:'Gunner', line:'Engineer line', fac:'tech', glyph:'G', hp:85, ATK:27, DEF:14, ATN:10, RES:12, HIT:98, SPD:14, LUK:10, MOVE:4, JUMP:2, WT:1, reach:[2,4], gun:true, rk:'charge', rmax:100, rstart:100, regen:0, abil:['attack','longshot','suppress','turret'] },
+  elementalist: { name:'Elementalist', line:'Acolyte line', fac:'magic', glyph:'E', hp:75, ATK:10, DEF:10, ATN:32, RES:24, HIT:95, SPD:13, LUK:10, MOVE:4, JUMP:2, WT:0, reach:[1,1], rk:'focus', rmax:100, rstart:0, regen:20, abil:['attack','spark','frost','flame'] },
+  bloodcaller:  { name:'Bloodcaller', line:'Awakened line', fac:'unbound', glyph:'B', hp:90, ATK:18, DEF:14, ATN:30, RES:18, HIT:95, SPD:15, LUK:12, MOVE:4, JUMP:2, WT:0, reach:[1,1], rk:'res', rmax:100, rstart:50, regen:6, abil:['attack','lance','hemorrhage','sacrifice'] },
+  trooper:      { name:'Trooper', line:'Directorate soldier', fac:'merc', glyph:'T', hp:110, ATK:28, DEF:26, ATN:6, RES:12, HIT:88, SPD:11, LUK:6, MOVE:3, JUMP:1, WT:2, reach:[1,1], rk:'cd', abil:['attack','guard'] },
+  cutthroat:    { name:'Cutthroat', line:'Skirmisher', fac:'merc', glyph:'C', hp:80, ATK:26, DEF:14, ATN:6, RES:10, HIT:95, SPD:17, LUK:14, MOVE:5, JUMP:3, WT:0, reach:[1,1], rk:'cd', passives:['backstab'], abil:['attack','smoke'] },
+  rifleman:     { name:'Rifleman', line:'Commonwealth gunner', fac:'tech', glyph:'R', hp:80, ATK:24, DEF:12, ATN:8, RES:10, HIT:95, SPD:12, LUK:8, MOVE:4, JUMP:2, WT:1, reach:[2,4], gun:true, rk:'charge', rmax:100, rstart:100, regen:0, abil:['attack'] },
+  acolyte:      { name:'Acolyte', line:'Ordained mage', fac:'magic', glyph:'A', hp:70, ATK:10, DEF:10, ATN:26, RES:22, HIT:92, SPD:13, LUK:8, MOVE:4, JUMP:2, WT:0, reach:[1,1], rk:'focus', rmax:100, rstart:0, regen:20, abil:['attack','spark','mend'] },
+};
+
+const AB = {
+  attack:     { name:'Attack', desc:'Basic weapon attack.', type:'weapon', power:1, target:'enemy' },
+  bash:       { name:'Shield Bash', desc:'Damage plus a 40% chance to Stun.', type:'weapon', power:0.8, range:[1,1], target:'enemy', cd:4, status:['stunned',40,1] },
+  guard:      { name:'Guard', desc:'Braced until your next turn: +25% counter chance, counters deal 75%. Moving ends it.', target:'self', cd:2 },
+  challenge:  { name:'Challenge', desc:'The target must attack this unit on its next turn if it can.', target:'enemy', range:[1,3], cd:3, noDmg:true },
+  longshot:   { name:'Long Shot', desc:'A shot with +2 range. Act-only.', type:'weapon', power:1, range:[2,6], target:'enemy', cost:20, actOnly:true },
+  suppress:   { name:'Suppressing Fire', desc:'Light damage in a small area. Targets can’t counter until their next turn.', type:'weapon', power:0.45, range:[2,4], area:1, target:'tile', cost:35, status:['suppressed',100,1] },
+  turret:     { name:'Deploy Turret', desc:'Place a turret on an adjacent tile. It fires at the nearest enemy within 3 at the start of your turns.', target:'emptyAdj', range:[1,1], cost:45 },
+  spark:      { name:'Spark', desc:'Lightning. 60% chance to Shock (next turn comes later).', type:'elem', power:0.7, range:[1,3], target:'enemy', cost:15, status:['shocked',60,1] },
+  frost:      { name:'Frost Lance', desc:'Frost at range. 60% chance to Freeze (can’t move). Can be channeled.', type:'elem', power:0.9, range:[2,4], target:'enemy', cost:30, status:['frozen',60,1], channel:true },
+  flame:      { name:'Flame Burst', desc:'Fire in a small area. 70% chance of Burning. Can be channeled.', type:'elem', power:0.7, range:[1,3], area:1, target:'tile', cost:40, status:['burning',70,3], channel:true },
+  lance:      { name:'Blood Lance', desc:'Raw Current at long range.', type:'elem', power:1.1, range:[1,4], target:'enemy', cost:30 },
+  hemorrhage: { name:'Hemorrhage', desc:'Damage plus Bleeding; heals you for half the damage.', type:'elem', power:0.8, range:[1,2], target:'enemy', cost:25, status:['bleeding',100,3], drain:0.5 },
+  sacrifice:  { name:'Sacrifice', desc:'Pay 15 HP for 30 Resonance. Adds a Strained stack.', target:'self' },
+  smoke:      { name:'Smoke Step', desc:'Become Hidden.', target:'self', cd:3 },
+  mend:       { name:'Mend', desc:'Heal an ally.', target:'ally', range:[0,3], cost:20, heal:1.1 },
+};
+
+const ST_LABEL = { hidden:'Hidden', braced:'Braced', burning:'Burning', bleeding:'Bleeding', frozen:'Frozen', suppressed:'Suppressed', challenged:'Challenged', stunned:'Stunned', stunImm:'Stun-immune', burnout:'Burnout' };
+const ST_TAG = { hidden:'HID', braced:'BRC', burning:'BRN', bleeding:'BLD', frozen:'FRZ', suppressed:'SUP', challenged:'CHL', stunned:'STN', burnout:'OUT' };
+
+let S;
+const cv = document.getElementById('board');
+const ctx = cv.getContext('2d');
+function fitCanvas() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = CW * dpr; cv.height = CH * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function addUnit(id, team, x, y, f) {
+  const d = DEFS[id];
+  const u = { uid: S.uid++, id, team, x, y, f: { ...f }, ...JSON.parse(JSON.stringify(d)),
+    mhp: d.hp, rv: d.rk === 'cd' ? 0 : d.rstart, cds: {}, st: {}, strain: 0, paid: false,
+    fallen: false, dead: false, count: 0, channel: null, challengedBy: null };
+  u.ct = effSpd(u) * 4;
+  S.units.push(u);
+}
+function newGame() {
+  S = { units: [], turrets: [], uid: 1, active: null, phase: 'busy', mode: null, ab: null, channel: false,
+        moved: false, acted: false, hover: null, pending: null, R: null, hl: new Map(), hlArea: null, pv: null,
+        popups: [], log: [], over: null };
+  addUnit('vanguard', 'player', 2, 6, {x:0,y:-1});
+  addUnit('gunner', 'player', 1, 7, {x:0,y:-1});
+  addUnit('elementalist', 'player', 3, 7, {x:0,y:-1});
+  addUnit('bloodcaller', 'player', 0, 6, {x:0,y:-1});
+  addUnit('trooper', 'enemy', 4, 1, {x:0,y:1});
+  addUnit('cutthroat', 'enemy', 6, 1, {x:0,y:1});
+  addUnit('rifleman', 'enemy', 5, 0, {x:0,y:1});
+  addUnit('acolyte', 'enemy', 2, 0, {x:0,y:1});
+  document.getElementById('over').hidden = true;
+  log('Battle at Ashfield Crossing begins.', 'key');
+  render();
+  setTimeout(nextTurn, 300);
+}
+
+const alive = u => u && !u.fallen && !u.dead;
+const effSpd = u => Math.max(4, u.SPD - u.WT);
+const unitAt = (x, y) => S.units.find(u => !u.dead && u.x === x && u.y === y);
+const turretAt = (x, y) => S.turrets.find(t => t.hp > 0 && t.x === x && t.y === y);
+const occ = (x, y) => unitAt(x, y) || turretAt(x, y);
+// Vision: within 2 tiles, in front of or beside the viewer (never behind).
+function sees(v, p) {
+  const rx = p.x - v.x, ry = p.y - v.y;
+  if (!rx && !ry) return false;
+  return Math.abs(rx) + Math.abs(ry) <= 2 && v.f.x * rx + v.f.y * ry >= 0;
+}
+const spotted = u => !!u.st.hidden && S.units.some(v => alive(v) && v.team !== u.team && sees(v, u));
+const targetable = u => !u.st.hidden || spotted(u);
+function log(msg, cls = '') { S.log.unshift({ msg, cls }); S.log = S.log.slice(0, 50); }
+function pop(o, text, color) { const c = scr(o.x, o.y); S.popups.push({ x: c.x, y: c.y - 40, text, color, t: performance.now() }); }
+
+// ---------- rules ----------
+function dirOf(defU, from) {
+  const rx = from.x - defU.x, ry = from.y - defU.y;
+  const fr = defU.f.x * rx + defU.f.y * ry;
+  const sd = Math.abs(defU.f.x * ry - defU.f.y * rx);
+  if (fr > sd) return 'front';
+  if (-fr > sd) return 'back';
+  return 'flank';
+}
+const rangeOf = (u, ab) => ab.range || u.reach;
+function inRange(u, ab, from, t) {
+  const [a, b] = rangeOf(u, ab);
+  let mx = b;
+  if (ab.type === 'weapon' && u.gun && hAt(from.x, from.y) - hAt(t.x, t.y) >= 2) mx++;
+  const d = md(from, t);
+  return d >= a && d <= mx;
+}
+const canReach = (defU, from) => { const d = md(defU, from); return d >= defU.reach[0] && d <= defU.reach[1]; };
+function rawDmg(att, tgt, ab) {
+  const phys = ab.type === 'weapon';
+  const s = phys ? att.ATK : att.ATN, d = phys ? tgt.DEF : tgt.RES;
+  return s * (ab.power || 1) * 100 / (100 + d);
+}
+function bloodPrice(u, ab) {
+  if (u.rk !== 'res' || !ab.cost || u.rv >= ab.cost) return null;
+  return { hp: Math.ceil((ab.cost - u.rv) * 0.6) };
+}
+function calc(att, tgt, ab, from, opt = {}) {
+  const dir = dirOf(tgt, from);
+  const dirB = { front: 0, flank: 10, back: 20 }[dir];
+  const hit = clamp(Math.round(att.HIT - (effSpd(tgt) - 10) * 2 + dirB), 0, 100);
+  const bp = opt.channel ? null : bloodPrice(att, ab);
+  let m = 1 + 0.1 * att.strain;
+  if (att.passives && att.passives.includes('backstab') && dir === 'back') m *= 1.3;
+  if (bp) m *= 1.25;
+  if (opt.channel) m *= 1.5;
+  const dmg = Math.max(1, Math.round(rawDmg(att, tgt, ab) * m));
+  const hidden = !!att.st.hidden;
+  const crit = clamp(Math.round(att.LUK * 0.5 + (hidden ? 25 : 0)), 0, 100);
+  const hd = hAt(from.x, from.y) - hAt(tgt.x, tgt.y);
+  let why = '';
+  if (hidden) why = 'you are Hidden';
+  else if (tgt.st.suppressed) why = 'the target is Suppressed';
+  else if (tgt.st.stunned) why = 'the target is Stunned';
+  else if (!canReach(tgt, from)) why = 'you are outside their weapon reach';
+  const canC = !why;
+  let cc = 0;
+  if (canC) {
+    cc = { front: 75, flank: 50, back: 25 }[dir];
+    if (hd > 0) cc -= 10 * hd;
+    if (tgt.st.braced) cc += 25;
+    cc = clamp(cc, 0, 100);
+  }
+  const parry = canC && tgt.passives && tgt.passives.includes('parry');
+  return { dir, dirB, hit, dmg, crit, critDmg: dmg * 2, cc, ccCrit: Math.floor(cc / 2), ccMiss: canC ? (parry ? 100 : cc) : 0, parry,
+    cdmg: canC ? Math.max(1, Math.round(rawDmg(tgt, att, AB.attack) * (tgt.st.braced ? 0.75 : 0.5))) : 0,
+    canC, why, bp, hd, lethal: dmg >= tgt.hp };
+}
+function canUse(u, id) {
+  const ab = AB[id];
+  const no = why => ({ ok: false, why });
+  if (S.acted) return no('Already acted');
+  if (id !== 'attack' && u.st.burnout) return no('Burnout');
+  if (ab.actOnly && S.moved) return no('Act-only: use before moving');
+  if (ab.cd && u.cds[id] > 0) return no('Ready in ' + u.cds[id]);
+  if (ab.cost && u.rk !== 'res' && u.rv < ab.cost) return no('Needs ' + ab.cost + ' ' + RES_NAME[u.rk]);
+  if (id === 'turret' && S.turrets.some(t => t.owner === u.uid && t.hp > 0)) return no('Turret already placed');
+  if (id === 'sacrifice' && u.hp <= 15) return no('Too few HP');
+  return { ok: true };
+}
+function costText(u, id) {
+  const ab = AB[id];
+  if (ab.cd) return 'cooldown ' + ab.cd;
+  if (ab.cost) return ab.cost + ' ' + RES_NAME[u.rk] + (u.rk === 'res' ? ' (or HP)' : '');
+  if (id === 'sacrifice') return '15 HP → 30 Resonance';
+  const r = rangeOf(u, ab); return 'range ' + (r[0] === r[1] ? r[0] : r[0] + '–' + r[1]);
+}
+function pay(u, id) {
+  const ab = AB[id];
+  if (ab.cd) u.cds[id] = ab.cd + 1;
+  if (!ab.cost) return;
+  if (u.rk === 'res') {
+    const bp = bloodPrice(u, ab);
+    if (bp) {
+      u.rv = 0; u.hp = Math.max(1, u.hp - bp.hp); u.strain++; u.paid = true;
+      pop(u, '-' + bp.hp + ' blood', COL.blood);
+      log(`${u.name} pays the Blood Price: ${bp.hp} HP (Strained ${u.strain}).`, 'bad');
+      checkBurnout(u);
+    } else u.rv -= ab.cost;
+  } else u.rv -= ab.cost;
+}
+function checkBurnout(u) {
+  if (u.strain >= 5 && !u.st.burnout) { u.st.burnout = 2; pop(u, 'Burnout', COL.blood); log(`${u.name} burns out and can't use abilities for 2 turns.`, 'bad'); }
+}
+function damage(u, n, color, label = '') {
+  n = Math.max(1, Math.round(n));
+  u.hp = Math.max(0, u.hp - n);
+  pop(u, '-' + n + (label ? ' ' + label : ''), color);
+  if (u.channel) { u.channel = null; pop(u, 'Interrupted', COL.violet); log(`${u.name}'s channel is interrupted.`, 'bad'); }
+  if (u.hp <= 0 && !u.fallen) fall(u);
+}
+function heal(u, n) { const h = Math.min(n, u.mhp - u.hp); if (h > 0) { u.hp += h; pop(u, '+' + h, COL.verd); } return h; }
+function fall(u) { u.fallen = true; u.count = 3; u.st = {}; u.channel = null; u.strain = 0; log(`${u.name} falls. 3 turns until they are lost.`, 'bad'); }
+function applyStatus(t, sid, dur) {
+  if (sid === 'stunned') {
+    if (t.st.stunImm) { pop(t, 'Resists stun', COL.muted); return; }
+    t.st.stunned = 1; pop(t, 'Stunned', COL.ink); log(`${t.name} is Stunned.`); return;
+  }
+  if (sid === 'shocked') { t.ct -= 35; pop(t, 'Shocked: delayed', '#e8d76a'); log(`${t.name} is Shocked; their next turn comes later.`); return; }
+  t.st[sid] = Math.max(t.st[sid] || 0, dur);
+  pop(t, ST_LABEL[sid], { frozen:'#9fd0f0', burning:'#e7843d', bleeding:COL.blood, suppressed:COL.brass }[sid] || COL.ink);
+}
+function face(u, p) {
+  const dx = p.x - u.x, dy = p.y - u.y;
+  if (!dx && !dy) return;
+  u.f = Math.abs(dx) >= Math.abs(dy) ? { x: Math.sign(dx), y: 0 } : { x: 0, y: Math.sign(dy) };
+}
+function areaTiles(c, r) {
+  const out = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (md({x,y}, c) <= r) out.push({ x, y });
+  return out;
+}
+function reachable(u) {
+  const res = new Map();
+  res.set(K(u.x, u.y), { x: u.x, y: u.y, path: [] });
+  if (u.st.frozen) return res;
+  const q = [{ x: u.x, y: u.y, d: 0, path: [] }];
+  const seen = new Set([K(u.x, u.y)]);
+  while (q.length) {
+    const c = q.shift();
+    if (c.d >= u.MOVE) continue;
+    for (const D of DIRS) {
+      const nx = c.x + D.x, ny = c.y + D.y;
+      if (!inb(nx, ny)) continue;
+      const k = K(nx, ny);
+      if (seen.has(k)) continue;
+      const dh = hAt(nx, ny) - hAt(c.x, c.y);
+      if (dh > u.JUMP || -dh > u.JUMP * 2) continue;
+      const o = occ(nx, ny);
+      const passable = !o || (o.team === u.team && alive(o));
+      if (!passable) continue;
+      seen.add(k);
+      const path = [...c.path, { x: nx, y: ny }];
+      if (!o) res.set(k, { x: nx, y: ny, path });
+      q.push({ x: nx, y: ny, d: c.d + 1, path });
+    }
+  }
+  return res;
+}
+async function moveAlong(u, path) {
+  for (const p of path) { face(u, p); u.x = p.x; u.y = p.y; await sleep(110); }
+  if (path.length && u.st.braced) { delete u.st.braced; }
+}
+function checkEnd() {
+  if (S.over) return true;
+  const p = S.units.some(u => u.team === 'player' && alive(u));
+  const e = S.units.some(u => u.team === 'enemy' && alive(u));
+  if (p && e) return false;
+  S.over = p ? 'win' : 'lose'; S.phase = 'over'; S.mode = null;
+  log(p ? 'The crossing is held.' : 'Your company has fallen.', 'key');
+  const o = document.getElementById('over');
+  o.innerHTML = p
+    ? '<div><b>Crossing held</b><p>Every hostile is down. Try a different opening to test other angles.</p><button id="again">Fight again</button></div>'
+    : '<div><b>Company lost</b><p>Every unit fell. The counters punish a careless push; try flanking or striking from reach.</p><button id="again">Fight again</button></div>';
+  o.hidden = false;
+  document.getElementById('again').onclick = newGame;
+  render();
+  return true;
+}
+
+// ---------- turn flow ----------
+function nextTurn() {
+  if (S.over) return;
+  const pool = S.units.filter(u => !u.dead);
+  let ready = pool.filter(u => u.ct >= 100);
+  if (!ready.length) {
+    let t = Infinity;
+    pool.forEach(u => { t = Math.min(t, Math.ceil((100 - u.ct) / effSpd(u))); });
+    pool.forEach(u => { u.ct += effSpd(u) * t; });
+    ready = pool.filter(u => u.ct >= 100);
+  }
+  ready.sort((a, b) => b.ct - a.ct || a.uid - b.uid);
+  startTurn(ready[0]);
+}
+async function startTurn(u) {
+  if (S.over) return;
+  Object.assign(S, { active: u, moved: false, acted: false, mode: null, ab: null, channel: false, pending: null, pv: null, hlArea: null });
+  u.paid = false;
+  if (u.fallen) {
+    u.count--; u.ct -= 100;
+    if (u.count <= 0) { u.dead = true; log(`${u.name} is lost for good.`, 'bad'); }
+    render(); await sleep(150); return nextTurn();
+  }
+  delete u.st.braced; delete u.st.suppressed;
+  for (const s of ['burning', 'bleeding']) {
+    if (!u.st[s]) continue;
+    damage(u, s === 'burning' ? 7 : 5, s === 'burning' ? '#e7843d' : COL.blood, s);
+    u.st[s]--; if (u.st[s] <= 0) delete u.st[s];
+    if (u.fallen) { render(); await sleep(400); u.ct -= 60; if (checkEnd()) return; return nextTurn(); }
+  }
+  if (u.st.stunned) {
+    delete u.st.stunned; u.st.stunImm = 2;
+    log(`${u.name} is Stunned and loses the turn.`); pop(u, 'Stunned', COL.ink);
+    u.ct -= 60; endStatuses(u); render(); await sleep(550); return nextTurn();
+  }
+  if (u.rk === 'focus' || u.rk === 'res') u.rv = Math.min(u.rmax, u.rv + u.regen);
+  for (const k in u.cds) if (u.cds[k] > 0) u.cds[k]--;
+  render();
+  for (const t of S.turrets.filter(t => t.owner === u.uid && t.hp > 0)) await turretFire(t, u);
+  if (checkEnd()) return;
+  if (u.channel) {
+    const c = u.channel; u.channel = null;
+    log(`${u.name} releases the channeled ${AB[c.id].name}.`, 'key');
+    await resolve(u, c.id, c.tile, true);
+    S.acted = true;
+    if (checkEnd()) return;
+  }
+  if (u.team === 'player') { S.phase = 'player'; render(); }
+  else { S.phase = 'busy'; render(); await sleep(420); await aiTurn(u); }
+}
+function endStatuses(u) {
+  for (const s of ['frozen', 'challenged', 'hidden', 'stunImm', 'burnout']) {
+    if (!u.st[s]) continue;
+    u.st[s]--;
+    if (u.st[s] <= 0) {
+      delete u.st[s];
+      if (s === 'challenged') u.challengedBy = null;
+      if (s === 'burnout') { u.strain = 0; log(`${u.name} recovers from Burnout; Strain resets.`); }
+    }
+  }
+  if (!u.paid && !u.st.burnout && u.strain > 0) u.strain--;
+}
+function finishTurn() {
+  const u = S.active;
+  if (!u) return;
+  u.ct -= (S.moved && S.acted) ? 100 : (S.moved || S.acted) ? 80 : 60;
+  if (!u.fallen) endStatuses(u);
+  Object.assign(S, { mode: null, phase: 'busy', pv: null, hlArea: null, pending: null });
+  render();
+  setTimeout(nextTurn, 180);
+}
+async function turretFire(t, owner) {
+  const foes = S.units.filter(v => alive(v) && v.team !== owner.team && targetable(v) && md(v, t) <= 3);
+  if (!foes.length) return;
+  foes.sort((a, b) => md(a, t) - md(b, t) || a.hp - b.hp);
+  const v = foes[0];
+  const d = Math.round(18 * 100 / (100 + v.DEF));
+  damage(v, d, COL.brass, 'turret');
+  log(`Turret fires at ${v.name} for ${d}.`);
+  render(); await sleep(380);
+}
+
+async function resolve(u, id, tile, ch = false) {
+  const ab = AB[id];
+  if (ab.target === 'self') {
+    pay(u, id);
+    if (id === 'guard') { u.st.braced = 1; pop(u, 'Braced', COL.verd); log(`${u.name} takes a Braced stance.`); }
+    if (id === 'smoke') { u.st.hidden = 3; pop(u, 'Hidden', COL.muted); log(`${u.name} vanishes into smoke.`); }
+    if (id === 'sacrifice') {
+      u.hp = Math.max(1, u.hp - 15); u.rv = Math.min(u.rmax, u.rv + 30); u.strain++; u.paid = true;
+      pop(u, '-15 blood', COL.blood); log(`${u.name} sacrifices 15 HP for 30 Resonance (Strained ${u.strain}).`, 'bad');
+      checkBurnout(u);
+    }
+    render(); await sleep(350); return;
+  }
+  face(u, tile);
+  if (id === 'turret') {
+    pay(u, id);
+    S.turrets.push({ x: tile.x, y: tile.y, hp: 30, mhp: 30, owner: u.uid, team: u.team, isTurret: true });
+    log(`${u.name} deploys a turret.`); render(); await sleep(300); return;
+  }
+  if (ab.heal) {
+    pay(u, id);
+    const t = unitAt(tile.x, tile.y);
+    if (alive(t)) { const h = heal(t, Math.round(u.ATN * ab.heal)); log(`${u.name} mends ${t.name} for ${h}.`, 'good'); }
+    render(); await sleep(350); return;
+  }
+  if (ab.noDmg) {
+    pay(u, id);
+    const t = unitAt(tile.x, tile.y);
+    if (alive(t)) { t.st.challenged = 1; t.challengedBy = u.uid; pop(t, 'Challenged', COL.brass); log(`${u.name} challenges ${t.name}.`); }
+    render(); await sleep(350); return;
+  }
+  const targets = (ab.area ? areaTiles(tile, ab.area) : [tile])
+    .map(p => unitAt(p.x, p.y)).filter(t => alive(t) && t.team !== u.team);
+  if (!targets.length) { if (!ch) pay(u, id); log(`${u.name}'s ${ab.name} hits nothing.`); render(); await sleep(300); return; }
+  const pre = targets.map(t => ({ t, c: calc(u, t, ab, u, { channel: ch }) }));
+  if (!ch) pay(u, id);
+  delete u.st.hidden;
+  for (const { t, c } of pre) {
+    if (!alive(t)) continue;
+    const hit = Math.random() * 100 < c.hit;
+    let crit = false;
+    if (hit) {
+      crit = Math.random() * 100 < c.crit;
+      const d = crit ? c.critDmg : c.dmg;
+      log(`${u.name} ${ab.name === 'Attack' ? 'hits' : 'uses ' + ab.name + ' on'} ${t.name}${c.dir !== 'front' ? ' from the ' + c.dir : ''}: ${d}${crit ? ' (critical)' : ''}.`, u.team === 'player' ? 'good' : '');
+      damage(t, d, crit ? '#ffd36b' : COL.ink, crit ? 'crit' : '');
+      if (t.st.hidden) { delete t.st.hidden; pop(t, 'Revealed', COL.brass); log(`${t.name} is caught in the blast and revealed.`); }
+      if (ab.drain) { const h = heal(u, Math.round(d * ab.drain)); if (h) log(`${u.name} drinks back ${h} HP.`); }
+      if (ab.status && alive(t)) { const [sid, chance, dur] = ab.status; if (ch || Math.random() * 100 < chance) applyStatus(t, sid, dur); }
+    } else { pop(t, 'Miss', COL.muted); log(`${u.name} misses ${t.name}.`); }
+    render(); await sleep(360);
+    if (alive(t) && alive(u) && c.canC) {
+      const chance = hit ? (crit ? c.ccCrit : c.cc) : c.ccMiss;
+      if (Math.random() * 100 < chance) {
+        face(t, u);
+        pop(t, 'Counter', COL.verd);
+        damage(u, c.cdmg, '#f2b9a6');
+        log(`${t.name} counters ${u.name} for ${c.cdmg}${!hit && c.parry ? ' (Parry)' : ''}.`, u.team === 'player' ? 'bad' : 'good');
+        render(); await sleep(380);
+      }
+    }
+    if (!alive(u)) break;
+  }
+}
+
+// ---------- enemy AI ----------
+async function aiTurn(u) {
+  const foes = S.units.filter(v => alive(v) && v.team !== u.team);
+  const allies = S.units.filter(v => alive(v) && v.team === u.team);
+  if (!foes.length) return finishTurn();
+  const R = reachable(u);
+  const challenger = u.st.challenged ? S.units.find(v => v.uid === u.challengedBy && alive(v)) : null;
+  let best = null;
+  const consider = o => { if (!best || o.score > best.score) best = o; };
+  for (const tile of R.values()) {
+    const at = { x: tile.x, y: tile.y };
+    for (const id of u.abil) {
+      const ab = AB[id];
+      S.acted = false; S.moved = tile.path.length > 0;
+      if (!canUse(u, id).ok) continue;
+      if (ab.target === 'enemy' && !ab.noDmg) {
+        for (const t of foes) {
+          if (!targetable(t)) continue;
+          if (challenger && t !== challenger) continue;
+          if (!inRange(u, ab, at, t)) continue;
+          const c = calc(u, t, ab, at);
+          const e = c.hit / 100 * c.dmg * (1 + c.crit / 100);
+          const kill = e >= t.hp ? 40 : 0;
+          const risk = kill ? 0 : (c.hit / 100 * c.cc + (1 - c.hit / 100) * c.ccMiss) / 100 * c.cdmg * 0.9;
+          let s = e + kill - risk + (c.dir === 'back' ? 4 : c.dir === 'flank' ? 2 : 0) + (ab.status ? 5 : 0) + (1 - t.hp / t.mhp) * 8;
+          if (challenger) s += 100;
+          consider({ tile, id, target: { x: t.x, y: t.y }, score: s });
+        }
+      } else if (ab.target === 'ally') {
+        for (const a of allies) {
+          if (a.hp > a.mhp * 0.6 || !inRange(u, ab, at, a)) continue;
+          consider({ tile, id, target: { x: a.x, y: a.y }, score: Math.min(Math.round(u.ATN * ab.heal), a.mhp - a.hp) * 1.2 });
+        }
+      } else if (ab.target === 'self') {
+        const dmin = Math.min(...foes.map(f => md(f, at)));
+        if (id === 'guard' && dmin <= 2) consider({ tile, id, target: at, score: 7 });
+        if (id === 'smoke' && !u.st.hidden) consider({ tile, id, target: at, score: 17 - dmin * 1.5 });
+      }
+    }
+  }
+  S.moved = false; S.acted = false;
+  if (best && best.score > 4) {
+    if (best.tile.path.length) { await moveAlong(u, best.tile.path); S.moved = true; render(); await sleep(200); }
+    await resolve(u, best.id, best.target);
+    S.acted = true;
+    if (checkEnd()) return;
+  } else {
+    const goal = challenger || foes.slice().sort((a, b) => md(a, u) - md(b, u))[0];
+    const pref = u.gun ? 3 : 1;
+    let pick = null, ps = Infinity;
+    for (const tile of R.values()) {
+      const d = md(tile, goal);
+      const s = Math.abs(d - pref) * 10 + d * 0.1 - hAt(tile.x, tile.y) * 0.6;
+      if (s < ps) { ps = s; pick = tile; }
+    }
+    if (pick && pick.path.length) { await moveAlong(u, pick.path); S.moved = true; }
+  }
+  if (alive(u)) {
+    const near = S.units.filter(v => alive(v) && v.team !== u.team).sort((a, b) => md(a, u) - md(b, u))[0];
+    if (near) face(u, near);
+  }
+  render(); await sleep(250);
+  finishTurn();
+}
+
+// ---------- player input ----------
+function validTarget(p) {
+  const u = S.active, ab = AB[S.ab];
+  if (!p || !u || !ab) return false;
+  if (!inRange(u, ab, u, p)) return false;
+  const t = unitAt(p.x, p.y);
+  if (ab.target === 'enemy') return alive(t) && t.team !== u.team && targetable(t);
+  if (ab.target === 'ally') return alive(t) && t.team === u.team;
+  if (ab.target === 'emptyAdj') return !occ(p.x, p.y);
+  return true;
+}
+function computePreview() {
+  S.pv = null; S.hlArea = null;
+  if (S.phase !== 'player' || S.mode !== 'target' || !S.hover) return;
+  const u = S.active, ab = AB[S.ab], p = S.hover;
+  if (!validTarget(p)) return;
+  if (ab.area) S.hlArea = areaTiles(p, ab.area).map(q => K(q.x, q.y));
+  const ch = S.channel && ab.channel;
+  if (ab.target === 'tile' || ab.area) {
+    const ts = areaTiles(p, ab.area || 0).map(q => unitAt(q.x, q.y)).filter(t => alive(t) && t.team !== u.team);
+    S.pv = { kind: 'area', list: ts.map(t => ({ t, c: calc(u, t, ab, u, { channel: ch }) })) };
+  } else if (ab.target === 'enemy' && !ab.noDmg) {
+    const t = unitAt(p.x, p.y);
+    S.pv = { kind: 'single', t, c: calc(u, t, ab, u, { channel: ch }) };
+  } else {
+    S.pv = { kind: 'simple', t: unitAt(p.x, p.y), p };
+  }
+}
+function startMode(mode, abId) {
+  S.mode = mode; S.ab = abId || null; S.pending = null; S.channel = false;
+  if (mode === 'move') S.R = reachable(S.active);
+  computePreview(); render();
+}
+function cancel() { if (S.phase !== 'player') return; if (S.mode === 'facing') return; S.mode = null; S.ab = null; S.pv = null; S.hlArea = null; S.pending = null; render(); }
+async function doAbility(id, p) {
+  const u = S.active, ab = AB[id];
+  S.phase = 'busy'; S.mode = null; S.pv = null; S.hlArea = null; render();
+  if (S.channel && ab.channel) {
+    pay(u, id); u.channel = { id, tile: { x: p.x, y: p.y } }; face(u, p);
+    pop(u, 'Channeling', COL.violet);
+    log(`${u.name} begins channeling ${ab.name}. It resolves at the start of their next turn unless they are hit.`, 'key');
+    await sleep(300);
+  } else await resolve(u, id, p);
+  S.acted = true; S.channel = false;
+  if (checkEnd()) return;
+  if (!alive(u)) return finishTurn();
+  S.phase = 'player';
+  S.mode = (S.moved || u.st.frozen) ? 'facing' : null;
+  render();
+}
+async function onTile(p, touch) {
+  if (S.phase !== 'player') { S.hover = p; render(); return; }
+  const u = S.active;
+  if (S.mode === 'move') {
+    const r = S.R && S.R.get(K(p.x, p.y));
+    if (r && r.path.length) {
+      S.phase = 'busy'; S.mode = null; render();
+      await moveAlong(u, r.path); S.moved = true; S.phase = 'player';
+      if (S.acted) S.mode = 'facing';
+      render();
+    } else if (p.x === u.x && p.y === u.y) cancel();
+    return;
+  }
+  if (S.mode === 'target') {
+    if (!validTarget(p)) return;
+    const k = K(p.x, p.y);
+    if (touch && S.pending !== k) { S.pending = k; S.hover = p; computePreview(); render(); return; }
+    return doAbility(S.ab, p);
+  }
+  if (S.mode === 'facing') {
+    if (md(p, u) === 1) { face(u, p); finishTurn(); }
+    return;
+  }
+  if (p.x === u.x && p.y === u.y && !S.moved) { startMode('move'); return; }
+  S.hover = p; render();
+}
+
+function pick(e) {
+  const r = cv.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * CW / r.width, my = (e.clientY - r.top) * CH / r.height;
+  const objs = S.units.filter(u => !u.dead).sort((a, b) => (b.x + b.y) - (a.x + a.y));
+  for (const u of objs) { const c = scr(u.x, u.y); if (mx > c.x - 13 && mx < c.x + 13 && my > c.y - 40 && my < c.y + 4) return { x: u.x, y: u.y }; }
+  const tiles = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) tiles.push({ x, y });
+  tiles.sort((a, b) => (b.x + b.y) - (a.x + a.y));
+  for (const t of tiles) { const c = scr(t.x, t.y); if (Math.abs(mx - c.x) / (TW / 2) + Math.abs(my - c.y) / (TH / 2) <= 1) return t; }
+  return null;
+}
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;
+  const p = pick(e);
+  const k = p ? K(p.x, p.y) : null, prev = S.hover ? K(S.hover.x, S.hover.y) : null;
+  if (k === prev) return;
+  S.hover = p; computePreview(); render();
+});
+cv.addEventListener('pointerleave', () => { if (S.mode !== 'target' || !S.pending) { S.hover = null; computePreview(); render(); } });
+cv.addEventListener('pointerdown', e => { if (e.button === 2) return; const p = pick(e); if (p) onTile(p, e.pointerType === 'touch'); });
+cv.addEventListener('contextmenu', e => { e.preventDefault(); cancel(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') cancel(); });
+document.getElementById('restart').addEventListener('click', newGame);
+
+document.getElementById('activeBlock').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled || S.phase !== 'player') return;
+  const act = b.dataset.act, u = S.active;
+  if (act === 'move') return S.mode === 'move' ? cancel() : startMode('move');
+  if (act === 'ab') {
+    const id = b.dataset.id, ab = AB[id];
+    if (ab.target === 'self') return doAbility(id, { x: u.x, y: u.y });
+    return (S.mode === 'target' && S.ab === id) ? cancel() : startMode('target', id);
+  }
+  if (act === 'end') { S.mode = 'facing'; S.pv = null; S.hlArea = null; render(); return; }
+  if (act === 'face') { const D = DIRS[+b.dataset.d]; u.f = { x: D.x, y: D.y }; finishTurn(); return; }
+  if (act === 'keep') { finishTurn(); return; }
+  if (act === 'back') { S.mode = null; render(); return; }
+});
+document.getElementById('activeBlock').addEventListener('change', e => {
+  if (e.target.id === 'chan') { S.channel = e.target.checked; computePreview(); render(); }
+});
+
+// ---------- side panel ----------
+function bar(v, max, color, label) {
+  const w = max ? clamp(v / max * 100, 0, 100) : 0;
+  return `<div class="bar"><i style="width:${w}%;background:${color}"></i><span>${label}</span></div>`;
+}
+function unitCard(u, tagText) {
+  const chips = Object.keys(u.st).filter(s => ST_LABEL[s]).map(s => `<span class="chip">${ST_LABEL[s]}${['hidden','burning','bleeding','burnout'].includes(s) ? ' ' + u.st[s] : ''}</span>`);
+  if (spotted(u)) chips.push(`<span class="chip" style="color:${COL.brass}">Spotted: inside an enemy's vision, can be targeted</span>`);
+  if (u.strain) chips.push(`<span class="chip" style="color:${COL.blood}">Strained ${u.strain}/5</span>`);
+  if (u.channel) chips.push(`<span class="chip" style="color:${COL.violet}">Channeling ${esc(AB[u.channel.id].name)}</span>`);
+  if (u.fallen) chips.push(`<span class="chip" style="color:${COL.rust}">Fallen · ${u.count} turns left</span>`);
+  if (u.dead) chips.push(`<span class="chip">Lost</span>`);
+  const resBar = u.rk === 'cd'
+    ? `<div class="chips">${u.abil.filter(a => AB[a].cd).map(a => `<span class="chip">${esc(AB[a].name)}: ${u.cds[a] > 0 ? 'ready in ' + u.cds[a] : 'ready'}</span>`).join('')}</div>`
+    : bar(u.rv, u.rmax, FAC[u.fac], `${RES_NAME[u.rk]} ${u.rv}/${u.rmax}`);
+  const st = [['ATK',u.ATK],['DEF',u.DEF],['ATN',u.ATN],['RES',u.RES],['HIT',u.HIT],['SPD',u.SPD + (u.WT ? '−' + u.WT : '')],['LUK',u.LUK],['MOVE',u.MOVE],['JUMP',u.JUMP],['REACH',u.reach[0] === u.reach[1] ? u.reach[0] : u.reach.join('–')]];
+  return `<div class="card-head"><span class="glyph" style="background:${FAC[u.fac]}">${u.glyph}</span>
+    <div><b>${esc(u.name)}</b><small>${esc(u.line)}${u.passives ? ' · ' + u.passives.map(p => p === 'parry' ? 'Parry: always counters a miss' : 'Backstab: +30% from behind').join('') : ''}</small></div>
+    <span class="tag ${u.team === 'player' ? 'p' : 'e'}">${tagText}</span></div>
+    ${bar(u.hp, u.mhp, u.team === 'player' ? COL.verd : COL.rust, `HP ${u.hp}/${u.mhp}`)}
+    ${resBar}
+    ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+    <dl class="stats">${st.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+}
+function renderActive() {
+  const el = document.getElementById('activeBlock');
+  const u = S.active;
+  if (S.phase === 'over') { el.innerHTML = `<h2>Battle over</h2><p class="hint">${S.over === 'win' ? 'The crossing is held.' : 'Your company has fallen.'}</p>`; return; }
+  if (!u) { el.innerHTML = '<h2>Preparing</h2><p class="hint">Setting the field…</p>'; return; }
+  if (u.team !== 'player' || S.phase !== 'player') {
+    el.innerHTML = `<h2>${u.team === 'player' ? 'Your unit is acting' : 'Hostile turn'}</h2>${unitCard(u, u.team === 'player' ? 'Acting' : 'Acting')}<p class="hint">${u.team === 'player' ? 'Resolving…' : 'Watch where they move and who they choose to hit.'}</p>`;
+    return;
+  }
+  let html = `<h2>Your turn</h2>${unitCard(u, 'Your turn')}`;
+  if (S.mode === 'facing') {
+    html += `<p class="hint">Choose a facing to end the turn. Attacks from behind get +20 HIT and only a 25% counter. You can also click an adjacent tile.</p>
+      <div class="facing">${DIRS.map((D, i) => `<button data-act="face" data-d="${i}" aria-label="Face ${['up-right','down-right','down-left','up-left'][i]}" class="${u.f.x === D.x && u.f.y === D.y ? 'on' : ''}">${D.a}</button>`).join('')}</div>
+      <div class="actions"><button data-act="keep" class="wide">Keep current facing and end turn</button>${!S.acted || !S.moved ? '<button data-act="back" class="wide ghost">Back</button>' : ''}</div>`;
+  } else {
+    const canMove = !S.moved && !u.st.frozen;
+    html += `<div class="actions">
+      <button data-act="move" ${canMove ? '' : 'disabled'} class="${S.mode === 'move' ? 'on' : ''}">Move<small>${u.st.frozen ? 'Frozen' : S.moved ? 'Already moved' : u.MOVE + ' tiles · jump ' + u.JUMP}</small></button>
+      ${u.abil.map(id => { const c = canUse(u, id); return `<button data-act="ab" data-id="${id}" ${c.ok ? '' : 'disabled'} class="${S.mode === 'target' && S.ab === id ? 'on' : ''}" title="${esc(AB[id].desc)}">${esc(AB[id].name)}<small>${c.ok ? esc(costText(u, id)) : esc(c.why)}</small></button>`; }).join('')}
+      <button data-act="end">End turn<small>${S.moved && S.acted ? 'wait 100' : S.moved || S.acted ? 'wait 80' : 'wait 60, next turn sooner'}</small></button>
+    </div>`;
+    if (S.mode === 'target') {
+      const ab = AB[S.ab];
+      html += `<p class="hint"><b>${esc(ab.name)}:</b> ${esc(ab.desc)}</p>`;
+      if (ab.channel) html += `<label class="chan"><input type="checkbox" id="chan" ${S.channel ? 'checked' : ''}><span>Channel it: resolves at the start of the next turn at ×1.5 with a sure status. A hit before then interrupts it and the Focus is lost.</span></label>`;
+      html += `<p class="hint">${matchMedia('(pointer: coarse)').matches ? 'Tap a target to preview, tap again to confirm.' : 'Hover a highlighted target to preview, click to confirm.'} Esc cancels.</p>`;
+    } else if (S.mode === 'move') html += `<p class="hint">Pick a highlighted tile. Climb up to ${u.JUMP} level${u.JUMP > 1 ? 's' : ''}, drop up to ${u.JUMP * 2}.${u.st.braced ? ' Moving ends Braced.' : ''}</p>`;
+    else html += `<p class="hint">Tip: click your unit to move. Use the preview to check counter odds before committing.</p>`;
+  }
+  el.innerHTML = html;
+}
+function counterLine(c, who) {
+  if (!c.canC) return `<div class="counter none">No counter: ${c.why}.</div>`;
+  if (c.lethal && c.hit === 100) return `<div class="counter none">Lethal on hit: they can't counter if they fall.</div>`;
+  return `<div class="counter">${who} counter: <b>${c.cc}%</b> on a hit · <b>${c.ccCrit}%</b> on a crit · <b>${c.ccMiss}%</b> on a miss${c.parry ? ' (Parry)' : ''} → <b>${c.cdmg}</b> damage to you${c.lethal ? '. No counter if this kills them' : ''}.</div>`;
+}
+function renderPreview() {
+  const el = document.getElementById('previewBlock');
+  const pv = S.pv;
+  if (pv && pv.kind === 'single') {
+    const c = pv.c, t = pv.t;
+    const notes = [];
+    if (c.hd > 0) notes.push(`High ground: −${c.hd * 10}% counter chance.`);
+    if (t.st.braced) notes.push('Target is Braced: +25% counter chance, counters at 75%.');
+    if (c.bp) notes.push(`<span class="note warn">Blood Price: you pay ${c.bp.hp} HP (+25% damage, +1 Strained).</span>`);
+    if (S.channel && AB[S.ab].channel) notes.push('Channeled: resolves next turn. The target may move away.');
+    el.innerHTML = `<h2>Preview · ${esc(AB[S.ab].name)} → ${esc(t.name)}${S.pending ? ' · tap again to confirm' : ''}</h2>
+      <div class="pv"><div><small>Hit</small><b>${c.hit}%</b><em>${c.dirB ? '+' + c.dirB + ' from ' + c.dir : 'from the front'}</em></div>
+      <div><small>Damage</small><b>${c.dmg}</b><em>of ${t.hp} HP</em></div>
+      <div><small>Crit</small><b>${c.crit}%</b><em>for ${c.critDmg}</em></div></div>
+      ${counterLine(c, esc(t.name))}
+      ${notes.map(n => `<p class="note">${n}</p>`).join('')}`;
+    return;
+  }
+  if (pv && pv.kind === 'area') {
+    el.innerHTML = `<h2>Preview · ${esc(AB[S.ab].name)}${S.pending ? ' · tap again to confirm' : ''}</h2>
+      ${pv.list.length ? `<ul class="multi">${pv.list.map(({ t, c }) => `<li><b>${esc(t.name)}</b>: ${c.hit}% to hit for ${c.dmg} (of ${t.hp}) · ${c.canC ? `counter ${c.cc}% for ${c.cdmg}` : 'no counter: ' + c.why}</li>`).join('')}</ul>` : '<p class="hint">No enemies in the area.</p>'}
+      ${pv.list[0] && pv.list[0].c.bp ? `<p class="note warn">Blood Price: you pay ${pv.list[0].c.bp.hp} HP.</p>` : ''}`;
+    return;
+  }
+  if (pv && pv.kind === 'simple') {
+    const ab = AB[S.ab];
+    el.innerHTML = `<h2>Preview · ${esc(ab.name)}${S.pending ? ' · tap again to confirm' : ''}</h2><p class="hint">${esc(ab.desc)}${pv.t && ab.heal ? ` Heals ${pv.t.name} for up to ${Math.round(S.active.ATN * ab.heal)}.` : ''}</p>`;
+    return;
+  }
+  const h = S.hover && S.units.find(u => !u.dead && u.x === S.hover.x && u.y === S.hover.y);
+  if (h && h !== S.active) { el.innerHTML = `<h2>Inspect</h2>${unitCard(h, h.team === 'player' ? 'Ally' : 'Hostile')}`; return; }
+  const ht = S.hover ? `Tile height ${hAt(S.hover.x, S.hover.y)}` : 'Hover a unit to inspect it.';
+  el.innerHTML = `<h2>Preview</h2><p class="hint">${ht}. Choose an ability to see hit chance, damage and counter odds before you commit.</p>`;
+}
+function predictOrder(n) {
+  const pool = S.units.filter(u => alive(u)).map(u => ({ u, ct: u.ct }));
+  const out = [];
+  if (S.active && alive(S.active)) { out.push(S.active); const a = pool.find(p => p.u === S.active); if (a) a.ct -= 100; }
+  let guard = 0;
+  while (out.length < n && pool.length && guard++ < 500) {
+    let ready = pool.filter(p => p.ct >= 100);
+    if (!ready.length) { pool.forEach(p => p.ct += effSpd(p.u)); continue; }
+    ready.sort((a, b) => b.ct - a.ct || a.u.uid - b.u.uid);
+    out.push(ready[0].u); ready[0].ct -= 100;
+  }
+  return out;
+}
+function render() {
+  const hl = new Map();
+  const u = S.active;
+  if (S.phase === 'player' && u) {
+    if (S.mode === 'move' && S.R) for (const [k, v] of S.R) if (v.path.length) hl.set(k, 'move');
+    if (S.mode === 'target') { const ab = AB[S.ab]; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (inRange(u, ab, u, { x, y })) hl.set(K(x, y), validTarget({ x, y }) && ab.target !== 'tile' ? 'valid' : 'range'); }
+    if (S.mode === 'facing') for (const D of DIRS) { const x = u.x + D.x, y = u.y + D.y; if (inb(x, y)) hl.set(K(x, y), 'face'); }
+  }
+  if (!S.mode && S.hover) {
+    const hv = S.units.find(v => alive(v) && v.x === S.hover.x && v.y === S.hover.y);
+    if (hv) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (sees(hv, { x, y })) hl.set(K(x, y), 'vision');
+  }
+  if (S.hlArea) for (const k of S.hlArea) hl.set(k, 'area');
+  S.hl = hl;
+  document.getElementById('order').innerHTML = predictOrder(8).map((v, i) =>
+    `<li class="${v.team}${i === 0 ? ' now' : ''}"><span class="g" style="background:${FAC[v.fac]}">${v.glyph}</span>${esc(v.name)}</li>`).join('');
+  renderActive(); renderPreview();
+  document.getElementById('log').innerHTML = S.log.map(l => `<li class="${l.cls}">${esc(l.msg)}</li>`).join('');
+}
+
+// ---------- drawing ----------
+const TOP = ['#4b4338', '#5b5143', '#6c614f', '#7e715c'];
+const HLF = { move: 'rgba(99,181,162,.32)', range: 'rgba(208,91,63,.16)', valid: 'rgba(208,91,63,.38)', area: 'rgba(211,164,79,.5)', face: 'rgba(211,164,79,.28)', vision: 'rgba(190,200,205,.2)' };
+function poly(pts) { ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath(); }
+function ell(x, y, rx, ry) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); }
+function drawTile(x, y) {
+  const h = hAt(x, y), c = scr(x, y), dep = h * HS + 10;
+  const T = [c.x, c.y - TH / 2], R = [c.x + TW / 2, c.y], B = [c.x, c.y + TH / 2], L = [c.x - TW / 2, c.y];
+  poly([L, B, [B[0], B[1] + dep], [L[0], L[1] + dep]]); ctx.fillStyle = '#2b251e'; ctx.fill();
+  poly([B, R, [R[0], R[1] + dep], [B[0], B[1] + dep]]); ctx.fillStyle = '#383128'; ctx.fill();
+  poly([T, R, B, L]); ctx.fillStyle = TOP[h]; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 1; ctx.stroke();
+  if ((x * 7 + y * 3) % 5 === 0) { ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.moveTo(c.x - 10, c.y - 2); ctx.lineTo(c.x + 2, c.y + 3); ctx.lineTo(c.x + 9, c.y); ctx.stroke(); }
+  const k = K(x, y), hk = S.hl.get(k);
+  if (hk) { poly([T, R, B, L]); ctx.fillStyle = HLF[hk]; ctx.fill(); }
+  if (S.hover && S.hover.x === x && S.hover.y === y) { poly([T, R, B, L]); ctx.strokeStyle = COL.brass; ctx.lineWidth = 2; ctx.stroke(); }
+}
+function drawUnit(u, now) {
+  const c = scr(u.x, u.y);
+  const team = u.team === 'player' ? COL.verd : COL.rust;
+  ctx.save();
+  if (u.st.hidden) ctx.globalAlpha = spotted(u) ? 0.8 : 0.42;
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ell(c.x, c.y + 1, 15, 7); ctx.fill();
+  ctx.strokeStyle = team; ctx.lineWidth = 2; ell(c.x, c.y, 16, 8); ctx.stroke();
+  if (u === S.active && !S.over) {
+    const p = (Math.sin(now / 260) + 1) / 2;
+    ctx.strokeStyle = `rgba(211,164,79,${0.45 + p * 0.5})`; ctx.lineWidth = 2; ell(c.x, c.y, 20 + p * 2, 10 + p); ctx.stroke();
+  }
+  if (u.fallen) {
+    ctx.fillStyle = '#55504a'; ctx.strokeStyle = '#1a1714'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(c.x - 15, c.y - 9, 30, 11, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = COL.rust; ctx.font = '500 11px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+    ctx.fillText(String(u.count), c.x, c.y - 14);
+    ctx.restore(); return;
+  }
+  // facing wedge
+  const fx = (u.f.x - u.f.y) * TW / 2, fy = (u.f.x + u.f.y) * TH / 2, fl = Math.hypot(fx, fy);
+  const sx = fx / fl, sy = fy / fl;
+  const tip = [c.x + sx * 25, c.y + sy * 12.5], bx = c.x + sx * 16, by = c.y + sy * 8;
+  poly([tip, [bx - sy * 6, by + sx * 3], [bx + sy * 6, by - sx * 3]]); ctx.fillStyle = team; ctx.fill();
+  // body
+  const bodyCol = FAC[u.fac];
+  ctx.fillStyle = bodyCol; ctx.strokeStyle = '#14110d'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(c.x - 11, c.y - 34, 22, 32, [9, 9, 4, 4]); ctx.fill(); ctx.stroke();
+  if (u.team === 'enemy') { ctx.fillStyle = 'rgba(30,10,6,.55)'; ctx.beginPath(); ctx.roundRect(c.x - 11, c.y - 34, 22, 10, [9, 9, 0, 0]); ctx.fill(); }
+  ctx.fillStyle = '#15130f'; ctx.font = '500 13px "IBM Plex Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(u.glyph, c.x, c.y - 15);
+  if (u.channel) { ctx.strokeStyle = COL.violet; ctx.lineWidth = 1.5; ell(c.x, c.y - 18, 15 + Math.sin(now / 200) * 2, 20); ctx.stroke(); }
+  // hp bar
+  const w = 30, y0 = c.y - 44;
+  ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(c.x - w / 2 - 1, y0 - 1, w + 2, 6);
+  ctx.fillStyle = team; ctx.fillRect(c.x - w / 2, y0, w * u.hp / u.mhp, 4);
+  if (u.rk !== 'cd') { ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(c.x - w / 2 - 1, y0 + 5, w + 2, 3); ctx.fillStyle = FAC[u.fac]; ctx.fillRect(c.x - w / 2, y0 + 5, w * u.rv / u.rmax, 2); }
+  const tags = Object.keys(u.st).filter(s => ST_TAG[s]).map(s => ST_TAG[s]);
+  if (u.strain) tags.push('STR' + u.strain);
+  if (spotted(u)) tags.unshift('SPOTTED');
+  if (tags.length) { ctx.font = '500 8.5px "IBM Plex Mono", monospace'; ctx.fillStyle = COL.ink; ctx.fillText(tags.slice(0, 3).join(' '), c.x, y0 - 7); }
+  // hit% tag in target mode
+  if (S.mode === 'target' && S.phase === 'player' && S.pv) {
+    const list = S.pv.kind === 'single' ? [{ t: S.pv.t, c: S.pv.c }] : S.pv.kind === 'area' ? S.pv.list : [];
+    const m = list.find(l => l.t === u);
+    if (m) { ctx.fillStyle = 'rgba(20,17,13,.9)'; ctx.fillRect(c.x + 13, c.y - 32, 34, 14); ctx.fillStyle = COL.brass; ctx.font = '500 10px "IBM Plex Mono", monospace'; ctx.fillText(m.c.hit + '%', c.x + 30, c.y - 25); }
+  }
+  ctx.restore();
+}
+function drawTurret(t) {
+  const c = scr(t.x, t.y);
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ell(c.x, c.y + 1, 12, 6); ctx.fill();
+  const r = 10, pts = [];
+  for (let i = 0; i < 6; i++) { const a = Math.PI / 6 + i * Math.PI / 3; pts.push([c.x + Math.cos(a) * r, c.y - 10 + Math.sin(a) * r * 0.75]); }
+  poly(pts); ctx.fillStyle = COL.brass; ctx.fill(); ctx.strokeStyle = '#14110d'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#2b251e'; ctx.fillRect(c.x - 2, c.y - 22, 4, 9);
+  ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(c.x - 12, c.y - 30, 24, 5); ctx.fillStyle = COL.verd; ctx.fillRect(c.x - 11, c.y - 29, 22 * t.hp / t.mhp, 3);
+}
+function draw(now) {
+  ctx.clearRect(0, 0, CW, CH);
+  if (S) {
+    for (let s = 0; s <= 2 * (N - 1); s++) for (let x = 0; x < N; x++) {
+      const y = s - x; if (y < 0 || y >= N) continue;
+      drawTile(x, y);
+      const t = turretAt(x, y); if (t) drawTurret(t);
+      const u = S.units.find(v => !v.dead && v.x === x && v.y === y); if (u) drawUnit(u, now);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    S.popups = S.popups.filter(p => now - p.t < 1100);
+    for (const p of S.popups) {
+      const k = (now - p.t) / 1100;
+      ctx.globalAlpha = 1 - k * k;
+      ctx.font = '500 12px "IBM Plex Mono", monospace';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,9,7,.9)'; ctx.strokeText(p.text, p.x, p.y - k * 22);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, p.x, p.y - k * 22);
+      ctx.globalAlpha = 1;
+    }
+  }
+  requestAnimationFrame(draw);
+}
+
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
+newGame();
+requestAnimationFrame(draw);
+})();
+</script>

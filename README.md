@@ -13,7 +13,7 @@ src/Undercurrent.Core/           the rules library (net8.0, no dependencies)
   Data/                      JSON definitions, RulesConfig, GameData loader
   Battles/                   Battle (state, turns, actions, combat math), Unit, events, forecast
   Ai/                        EnemyAi (the prototype's AI)
-tests/Undercurrent.Core.Tests/   37 rule tests with a small built-in runner
+tests/Undercurrent.Core.Tests/   38 rule tests with a small built-in runner
 tools/Undercurrent.Sim/          AI-vs-AI battle simulator for balancing
 data/                        every tuning number and definition
   rules.json                 counters, hit chance, crits, Blood Price, statuses, turret...
