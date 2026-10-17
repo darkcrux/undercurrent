@@ -259,3 +259,16 @@ public static class DataTests
         Assert.True(e.Message.Contains("no-such-ability"), "names the missing ability");
     }
 }
+
+public static class AreaTests
+{
+    [Test]
+    public static void Affected_tiles_are_the_target_or_its_area_inside_the_map()
+    {
+        var b = Battle();
+        Assert.Equal(1, b.AffectedTiles(Ability("attack"), new Point(3, 3)).Count(), "single target");
+        Assert.Equal(5, b.AffectedTiles(Ability("flame"), new Point(3, 3)).Count(), "area 1 in the open");
+        Assert.Equal(3, b.AffectedTiles(Ability("flame"), new Point(0, 0)).Count(), "area 1 in a corner");
+        Assert.Equal(0, b.AffectedTiles(Ability("attack"), new Point(-1, 0)).Count(), "off the map");
+    }
+}
