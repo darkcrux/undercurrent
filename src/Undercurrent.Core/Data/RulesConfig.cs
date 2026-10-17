@@ -65,4 +65,10 @@ public sealed class RulesConfig
     public int TurretHp { get; set; } = 30;
     public int TurretPower { get; set; } = 18;
     public int TurretRange { get; set; } = 3;
+
+    // Enemy AI: how much a unit cares about the damage foes could deal it on a tile next turn.
+    // Expected damage leaves out crits and angles, so a tile counts as lethal from a share of current HP.
+    public double AiDangerWeight { get; set; } = 0.2;
+    public double AiLethalDangerShare { get; set; } = 0.6;
+    public double AiLethalDangerPenalty { get; set; } = 40;
 }

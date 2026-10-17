@@ -48,5 +48,9 @@
 
   "turretHp": 30,
   "turretPower": 18,
-  "turretRange": 3
+  "turretRange": 3,
+
+  "aiDangerWeight": 0.2,
+  "aiLethalDangerShare": 0.6,
+  "aiLethalDangerPenalty": 40
 }

@@ -12,7 +12,8 @@ public sealed record AiPlan(Point Destination, string? AbilityId, Point? Target,
 
 /// <summary>
 /// The prototype's AI: tries every reachable tile and every usable ability, scores expected damage
-/// against counter risk, and otherwise closes in on the nearest enemy. Works for either team.
+/// against counter risk and how much damage the foes could deal back on that tile next turn, and
+/// otherwise closes in on the nearest enemy along the safest tiles. Works for either team.
 /// </summary>
 public static class EnemyAi
 {
@@ -27,9 +28,21 @@ public static class EnemyAi
         var reachable = battle.ReachableTiles(u);
         var challenger = u.ChallengedBy is int id ? battle.Units.FirstOrDefault(v => v.Id == id && v.IsAlive) : null;
 
-        AiPlan? best = null;
-        void Consider(Point tile, string ability, Point target, double score)
+        var threats = Threats(battle, u);
+        var dangerAt = new Dictionary<Point, double>();
+        double DangerPenalty(Point tile, Unit? killed = null)
         {
+            double danger = killed is null
+                ? dangerAt.TryGetValue(tile, out var d) ? d : dangerAt[tile] = Danger(battle, u, tile, threats)
+                : Danger(battle, u, tile, threats, killed);
+            return battle.Rules.AiDangerWeight * Math.Min(danger, u.Hp)
+                + (danger >= u.Hp * battle.Rules.AiLethalDangerShare ? battle.Rules.AiLethalDangerPenalty : 0);
+        }
+
+        AiPlan? best = null;
+        void Consider(Point tile, string ability, Point target, double score, Unit? killed = null)
+        {
+            score -= DangerPenalty(tile, killed);
             if (best is null || score > best.Score) best = new AiPlan(tile, ability, target, score);
         }
 
@@ -57,7 +70,7 @@ public static class EnemyAi
                             + (ab.Status is not null ? 5 : 0)
                             + (1 - (double)t.Hp / t.MaxHp) * 8;
                         if (challenger is not null) score += 100;
-                        Consider(tile, abilityId, t.Position, score);
+                        Consider(tile, abilityId, t.Position, score, kill > 0 ? t : null);
                     }
                 }
                 else if (ab.Target == TargetKind.Enemy && ab.Effect == SpecialEffect.Challenge)
@@ -114,20 +127,70 @@ public static class EnemyAi
             }
         }
 
-        if (best is not null && best.Score > ActThreshold) return best;
-
-        // Nothing worth doing: close in (guns keep a distance of 3), preferring high ground.
+        // Otherwise close in (units that fight at range keep a distance of 3), preferring high ground and
+        // tiles the foes can't punish. Acting has to beat that by the threshold, danger included on both sides.
         var goal = challenger ?? foes.OrderBy(f => f.Position.DistanceTo(u.Position)).FirstOrDefault();
-        if (goal is null) return new AiPlan(u.Position, null, null, 0);
-        int preferred = u.Class.Gun ? 3 : 1;
+        if (goal is null) return best ?? new AiPlan(u.Position, null, null, 0);
+        int preferred = FightsAtRange(battle, u) ? 3 : 1;
         var destination = reachable.Keys
             .OrderBy(t =>
             {
                 int d = t.DistanceTo(goal.Position);
-                return Math.Abs(d - preferred) * 10 + d * 0.1 - battle.Map.HeightAt(t) * 0.6;
+                return Math.Abs(d - preferred) * 10 + d * 0.1 - battle.Map.HeightAt(t) * 0.6 + DangerPenalty(t);
             })
             .First();
-        return new AiPlan(destination, null, null, 0);
+        double stayBack = -DangerPenalty(destination);
+        if (best is not null && best.Score > stayBack + ActThreshold) return best;
+        return new AiPlan(destination, null, null, stayBack);
+    }
+
+    /// <summary>
+    /// How much damage the foes of <paramref name="u"/> could be expected to deal it on their next turns if it
+    /// stood on <paramref name="tile"/>: each foe's best hit from anywhere it can move to, times its hit chance.
+    /// Stunned foes lose their turn and count for nothing; <paramref name="ignoring"/> (a foe this turn's attack
+    /// should kill) is left out.
+    /// </summary>
+    public static double Danger(Battle battle, Unit u, Point tile, Unit? ignoring = null) =>
+        Danger(battle, u, tile, Threats(battle, u), ignoring);
+
+    /// <summary>Guns, and casters whose damaging abilities reach past melee range.</summary>
+    private static bool FightsAtRange(Battle battle, Unit u) =>
+        u.Class.Gun || u.Abilities.Select(battle.Data.Ability).Any(ab => ab.DealsDamage && (ab.Range ?? u.Reach).Max >= 3);
+
+    private sealed record Threat(Unit Foe, AbilityDef Ability, IReadOnlyCollection<Point> From);
+
+    private static List<Threat> Threats(Battle battle, Unit u)
+    {
+        var threats = new List<Threat>();
+        foreach (var foe in battle.Enemies(u))
+        {
+            if (foe.Has(StatusId.Stunned)) continue;
+            var reachable = battle.ReachableTiles(foe).Keys.ToList();
+            foreach (var abilityId in foe.Abilities)
+            {
+                var ab = battle.Data.Ability(abilityId);
+                if (!ab.DealsDamage || ab.Target is not (TargetKind.Enemy or TargetKind.Tile)) continue;
+                if (battle.CanUse(foe, abilityId, hasMoved: false, hasActed: false) != UseBlock.None) continue;
+                threats.Add(new Threat(foe, ab, ab.ActOnly ? new[] { foe.Position } : reachable));
+            }
+        }
+        return threats;
+    }
+
+    private static double Danger(Battle battle, Unit u, Point tile, List<Threat> threats, Unit? ignoring = null)
+    {
+        var rules = battle.Rules;
+        var best = new Dictionary<Unit, double>();
+        foreach (var (foe, ab, origins) in threats)
+        {
+            if (foe == ignoring) continue;
+            var hitTiles = ab.Area > 0 ? battle.Map.Diamond(tile, ab.Area).ToList() : new List<Point> { tile };
+            if (!origins.Any(from => from != tile && hitTiles.Any(p => battle.InRange(foe, ab, from, p)))) continue;
+            int hit = Math.Clamp(foe.Stats.Hit - (u.EffectiveSpeed(rules) - rules.HitSpeedPivot) * rules.HitSpeedFactor, 0, 100);
+            double expected = hit / 100.0 * Battle.RawDamage(foe, u, ab);
+            if (!best.TryGetValue(foe, out var b) || expected > b) best[foe] = expected;
+        }
+        return best.Values.Sum();
     }
 
     /// <summary>Carries out a plan: move, act, then face the nearest enemy and end the turn.</summary>
