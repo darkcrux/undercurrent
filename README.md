@@ -1,8 +1,8 @@
 # Undercurrent (working title)
 
-The game's rules as a plain C# library, with no engine code. Godot (or any engine) references it,
-sends it commands, and animates the events it reports. This is milestone M1 of the vertical slice:
-the browser prototype's combat, ported and tested.
+The game's rules as a plain C# library, with no engine code, and a Godot project that plays a battle on a
+3D board through it. Godot sends the library commands and animates the events it reports. Milestones M1
+(the browser prototype's combat, ported and tested) and M2 (a battle on a 3D board) of the vertical slice.
 
 ## What's here
 
@@ -13,11 +13,15 @@ src/Undercurrent.Core/           the rules library (net8.0, no dependencies)
   Data/                      JSON definitions, RulesConfig, GameData loader
   Battles/                   Battle (state, turns, actions, combat math), Unit, events, forecast
   Ai/                        EnemyAi (the prototype's AI)
-tests/Undercurrent.Core.Tests/   38 rule tests with a small built-in runner
+tests/Undercurrent.Core.Tests/   39 rule tests with a small built-in runner
 tools/Undercurrent.Sim/          AI-vs-AI battle simulator for balancing
 data/                        every tuning number and definition
   rules.json                 counters, hit chance, crits, Blood Price, statuses, turret...
   abilities.json  classes.json  units.json  maps/
+game/                        the Godot 4.7 .NET project (renders, takes input, plays events)
+  project.godot  Undercurrent.Game.csproj  Undercurrent.Game.sln
+  scenes/Battle.tscn         the battle scene; everything else is built in code
+  scripts/                   BattleController, BoardView, CameraRig, UnitView, EventPlayer, Hud, ...
 ```
 
 ## Run it
@@ -33,6 +37,31 @@ dotnet run --project tools/Undercurrent.Sim -- --log 3         # full log of one
 ```
 
 Balancing means editing `data/*.json` and rerunning the simulator. No code changes needed.
+
+`dotnet build` also compiles the Godot project (it needs the `Godot.NET.Sdk` package from NuGet once).
+
+## Play the battle in Godot
+
+Open `game/project.godot` in Godot 4.7 .NET (`godot-mono` from Homebrew) and press Play (F5). Pressing Play
+builds the C# project first, and every build copies the repo's `data/` folder to `game/data/`
+(gitignored), so `data/` stays the only copy you edit.
+
+| Input | Does |
+| --- | --- |
+| Click a blue tile | Move there (the path shows on hover) |
+| Ability button, then click a red tile | Use it; hovering a target shows the area and hit, damage, crit and counter odds |
+| End turn / Enter | Choose a facing with the arrow keys or the mouse, then Enter or click |
+| Esc or right-click | Back |
+| Q / E, wheel, WASD or middle-drag | Rotate, zoom, pan the camera |
+| F2 | Let the AI play your side |
+
+The HUD shows the battle's seed; replay any battle from the command line:
+
+```
+godot-mono --path game -- --seed 42               # play a specific seed
+godot-mono --headless --path game -- --autoplay   # AI vs AI, fast; prints the result and quits
+godot-mono --path game -- --screenshot shot.png   # saves the view when your first turn starts, then quits
+```
 
 ## How the engine uses it
 
@@ -68,22 +97,14 @@ while (!battle.IsOver)
 
 Every event has a `Text` for the battle log. `battle.PredictTurnOrder(8)` feeds the turn order strip.
 
-### In Godot (next milestone)
+### In Godot
 
-Reference the library from the Godot C# project's `.csproj`:
-
-```xml
-<ItemGroup>
-  <ProjectReference Include="../src/Undercurrent.Core/Undercurrent.Core.csproj" />
-</ItemGroup>
-```
-
-Exported games pack files inside the game, so load data through Godot's `FileAccess`:
+`game/scripts/BattleController.cs` is the working example. Data loads through Godot's `FileAccess`,
+since exported games pack files inside the game:
 
 ```csharp
-var data = GameData.Load(
-    path => FileAccess.GetFileAsString($"res://data/{path}"),
-    new[] { "maps/ashfield-test.json" });
+var maps = DirAccess.GetFilesAt("res://data/maps").Select(f => $"maps/{f}");
+var data = GameData.Load(path => FileAccess.GetFileAsString($"res://data/{path}"), maps);
 ```
 
 ## Rules ported from the prototype

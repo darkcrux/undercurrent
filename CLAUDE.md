@@ -26,17 +26,19 @@ tests/Undercurrent.Core.Tests/  rule tests, small built-in runner ([Test], Asser
 tools/Undercurrent.Sim/         AI-vs-AI simulator for balancing
 data/                           rules.json, abilities.json, classes.json, units.json, maps/*.json
 docs/                           design docs and the browser prototype
-game/                           the Godot project (to be created in M2)
+game/                           the Godot 4.7 .NET project: scenes/, scripts/; game/data is copied from data/ at build
 ```
 
 ## Commands
 
 ```
 dotnet build
-dotnet run --project tests/Undercurrent.Core.Tests            # all tests (38 at M1)
+dotnet run --project tests/Undercurrent.Core.Tests            # all tests (39 at M2)
 dotnet run --project tests/Undercurrent.Core.Tests -- Counter  # filter by name
 dotnet run --project tools/Undercurrent.Sim -- --battles 500   # balance numbers
 dotnet run --project tools/Undercurrent.Sim -- --log 3         # one battle's full log
+godot-mono --path game                                         # play (or open game/project.godot, F5)
+godot-mono --headless --path game -- --autoplay --seed 3       # AI vs AI smoke test, prints the result
 ```
 
 The machine has the .NET 10 SDK (Homebrew). The library targets net8.0 for Godot compatibility;
@@ -52,6 +54,9 @@ test and sim projects use RollForward=Major.
 - Every rule change gets a test. Battles are deterministic from a seed (`SeededRandom`); tests use
   `ScriptedRandom`.
 - Godot loads data with `GameData.Load(path => FileAccess.GetFileAsString($"res://data/{path}"), maps)`.
+  Edit data/ only; the game csproj copies it to game/data (gitignored) on every build.
+- In Godot, views follow the numbers in events while they play, then snap to the battle's state.
+  Rendering sizes (tile height step, camera pitch) are exported fields on the nodes, not rules.
 - Commit messages: short imperative subject, a body explaining why.
 
 ## Key design decisions (details in the docs)
@@ -82,10 +87,12 @@ test and sim projects use RollForward=Major.
 
 ## Status and next steps
 
-- M1 done: core rules library, 38 tests, simulator.
+- M1 done: core rules library, tests, simulator.
+- M2 done: Godot project in game/ with a 3D board from map heights, a rotating 30 degree camera,
+  placeholder billboard units, move, every ability with area and forecast on hover, facing, enemy
+  turns via EnemyAi, victory or defeat with replay. The HUD is minimal on purpose.
 - Known gaps: the AI ignores how dangerous a tile is (fragile casters walk into the open); hit
   chances run 93 to 100% with current stats; mastery, switching, items, revives and most of the 25
   classes aren't in the library yet.
-- Next, M2: create the Godot project in game/, reference the core library, build a 3D board from a
-  map's heights, placeholder billboard units, a camera at about 30 degrees down, move and attack
-  through the core, enemy turns via EnemyAi. Then M3: the full battle UI (attack preview, turn order).
+- Next, M3: the full battle UI (attack preview panel, turn order strip, statuses), prologue battle
+  playable end to end.
