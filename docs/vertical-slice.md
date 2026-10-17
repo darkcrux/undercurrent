@@ -122,7 +122,7 @@ concept.md).
 
 ```mermaid
 flowchart TB
-    M1["M1 · Core rules library (done)<br/>prototype rules in plain C#, tests, simulator"] --> M2["M2 · Battle on a 3D board<br/>Godot board, camera, placeholder units<br/>move, attack, facing and AI through the core"]
+    M1["M1 · Core rules library (done)<br/>prototype rules in plain C#, tests, simulator"] --> M2["M2 · Battle on a 3D board (done)<br/>Godot board, camera, placeholder units<br/>move, attack, facing and AI through the core"]
     M2 --> M3["M3 · Full battle UI<br/>attack preview, turn order, statuses<br/>prologue battle playable end to end"]
     M3 --> G1{{"First playable"}}
     G1 --> M4["M4 · Progression and town<br/>hiring, training, gear, saving<br/>mastery, deeds, borrowed slots"]

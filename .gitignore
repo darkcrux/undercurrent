@@ -7,3 +7,6 @@ obj/
 .godot/
 .mono/
 export/
+
+# Copied from ../data at build time by game/Undercurrent.Game.csproj
+game/data/

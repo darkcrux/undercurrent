@@ -85,6 +85,10 @@ public sealed partial class Battle
         return Map.AllTiles().Where(p => InRange(u, ab, origin, p));
     }
 
+    /// <summary>Tiles an ability used on <paramref name="target"/> would affect: the target alone, or its area.</summary>
+    public IEnumerable<Point> AffectedTiles(AbilityDef ab, Point target) =>
+        ab.Area > 0 ? Map.Diamond(target, ab.Area) : Map.Contains(target) ? new[] { target } : Array.Empty<Point>();
+
     public bool InRange(Unit u, AbilityDef ab, Point from, Point target)
     {
         var range = ab.Range ?? u.Reach;
@@ -201,8 +205,7 @@ public sealed partial class Battle
             return;
         }
 
-        var tiles = ab.Area > 0 ? Map.Diamond(target, ab.Area) : new[] { target };
-        var targets = tiles.Select(LivingUnitAt).OfType<Unit>().Where(t => t.Team != u.Team).ToList();
+        var targets = AffectedTiles(ab, target).Select(LivingUnitAt).OfType<Unit>().Where(t => t.Team != u.Team).ToList();
         if (targets.Count == 0)
         {
             if (!channeled) Pay(u, ab);

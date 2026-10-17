@@ -1,0 +1,28 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+
+  <!-- The Godot game. It renders, takes input and plays events; every rule lives in Undercurrent.Core. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Undercurrent.Game</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\Undercurrent.Core\Undercurrent.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The repo's data/ folder is the only copy you edit. Each build copies it to game/data (gitignored)
+       so the game can read it from res://data. -->
+  <ItemGroup>
+    <RepoData Include="..\data\**\*.json" />
+  </ItemGroup>
+  <Target Name="CopyRepoData" BeforeTargets="BeforeBuild">
+    <Copy SourceFiles="@(RepoData)"
+          DestinationFiles="@(RepoData->'$(MSBuildProjectDirectory)\data\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
