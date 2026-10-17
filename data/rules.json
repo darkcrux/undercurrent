@@ -1,0 +1,52 @@
+{
+  "turnThreshold": 100,
+  "startingWaitMultiplier": 4,
+  "minimumSpeed": 4,
+  "waitCostMoveAndAct": 100,
+  "waitCostMoveOrAct": 80,
+  "waitCostNeither": 60,
+
+  "hitSpeedPivot": 10,
+  "hitSpeedFactor": 2,
+  "flankHitBonus": 10,
+  "backHitBonus": 20,
+
+  "critLuckFactor": 0.5,
+  "hiddenCritBonus": 25,
+  "exposedCritPenalty": 10,
+  "critMultiplier": 2.0,
+
+  "counterChanceFront": 75,
+  "counterChanceFlank": 50,
+  "counterChanceBack": 25,
+  "counterHeightPenaltyPerLevel": 10,
+  "bracedCounterBonus": 25,
+  "counterDamageFactor": 0.5,
+  "bracedCounterDamageFactor": 0.75,
+  "critCounterFactor": 0.5,
+
+  "backstabMultiplier": 1.3,
+  "channelMultiplier": 1.5,
+  "gunHighGroundLevels": 2,
+  "gunHighGroundRangeBonus": 1,
+
+  "bloodPriceHpPerResonance": 0.6,
+  "bloodPriceDamageMultiplier": 1.25,
+  "strainDamagePerStack": 0.10,
+  "strainLimit": 5,
+  "burnoutTurns": 2,
+  "sacrificeHp": 15,
+  "sacrificeResonance": 30,
+
+  "burningDamage": 7,
+  "bleedingDamage": 5,
+  "shockDelay": 35,
+  "stunImmunityTurns": 2,
+
+  "visionRange": 2,
+  "fallenCountdown": 3,
+
+  "turretHp": 30,
+  "turretPower": 18,
+  "turretRange": 3
+}

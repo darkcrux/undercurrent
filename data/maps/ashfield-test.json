@@ -1,0 +1,24 @@
+{
+  "id": "ashfield-test",
+  "name": "Ashfield Crossing (prototype map)",
+  "heights": [
+    [0, 0, 0, 1, 1, 0, 0, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 2, 2, 1, 0, 0],
+    [1, 1, 1, 2, 3, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 1, 2, 2, 1],
+    [0, 1, 0, 0, 0, 1, 2, 1],
+    [0, 0, 0, 0, 0, 0, 1, 0]
+  ],
+  "units": [
+    { "unit": "vanguard",     "team": "player", "x": 2, "y": 6, "facing": "north" },
+    { "unit": "gunner",       "team": "player", "x": 1, "y": 7, "facing": "north" },
+    { "unit": "elementalist", "team": "player", "x": 3, "y": 7, "facing": "north" },
+    { "unit": "bloodcaller",  "team": "player", "x": 0, "y": 6, "facing": "north" },
+    { "unit": "trooper",      "team": "enemy",  "x": 4, "y": 1, "facing": "south" },
+    { "unit": "cutthroat",    "team": "enemy",  "x": 6, "y": 1, "facing": "south" },
+    { "unit": "rifleman",     "team": "enemy",  "x": 5, "y": 0, "facing": "south" },
+    { "unit": "acolyte",      "team": "enemy",  "x": 2, "y": 0, "facing": "south" }
+  ]
+}

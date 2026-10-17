@@ -1,0 +1,19 @@
+[
+  { "id": "vanguard",     "name": "Vanguard",     "class": "vanguard",
+    "stats": { "hp": 120, "atk": 30, "def": 30, "atn": 8,  "res": 16, "hit": 90, "spd": 12, "luk": 8 } },
+  { "id": "gunner",       "name": "Gunner",       "class": "gunner",
+    "stats": { "hp": 85,  "atk": 27, "def": 14, "atn": 10, "res": 12, "hit": 98, "spd": 14, "luk": 10 } },
+  { "id": "elementalist", "name": "Elementalist", "class": "elementalist",
+    "stats": { "hp": 75,  "atk": 10, "def": 10, "atn": 32, "res": 24, "hit": 95, "spd": 13, "luk": 10 } },
+  { "id": "bloodcaller",  "name": "Bloodcaller",  "class": "bloodcaller",
+    "stats": { "hp": 90,  "atk": 18, "def": 14, "atn": 30, "res": 18, "hit": 95, "spd": 15, "luk": 12 } },
+
+  { "id": "trooper",      "name": "Trooper",      "class": "mercenary",
+    "stats": { "hp": 110, "atk": 28, "def": 26, "atn": 6,  "res": 12, "hit": 88, "spd": 11, "luk": 6 } },
+  { "id": "cutthroat",    "name": "Cutthroat",    "class": "skirmisher",
+    "stats": { "hp": 80,  "atk": 26, "def": 14, "atn": 6,  "res": 10, "hit": 95, "spd": 17, "luk": 14 } },
+  { "id": "rifleman",     "name": "Rifleman",     "class": "rifleman",
+    "stats": { "hp": 80,  "atk": 24, "def": 12, "atn": 8,  "res": 10, "hit": 95, "spd": 12, "luk": 8 } },
+  { "id": "acolyte",      "name": "Acolyte",      "class": "acolyte",
+    "stats": { "hp": 70,  "atk": 10, "def": 10, "atn": 26, "res": 22, "hit": 92, "spd": 13, "luk": 8 } }
+]

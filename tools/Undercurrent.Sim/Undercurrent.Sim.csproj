@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Runs AI-vs-AI battles from the command line, for balancing.
+       Run from the repo root with the project path tools/Undercurrent.Sim (see README) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Undercurrent.Core\Undercurrent.Core.csproj" />
+  </ItemGroup>
+
+</Project>

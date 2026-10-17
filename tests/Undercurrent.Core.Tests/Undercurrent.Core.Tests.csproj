@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Rule tests with a tiny built-in runner (no NuGet packages needed).
+       Run from the repo root: dotnet run, with the project path tests/Undercurrent.Core.Tests (see README) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Undercurrent.Core\Undercurrent.Core.csproj" />
+  </ItemGroup>
+
+</Project>
