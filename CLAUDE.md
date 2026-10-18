@@ -33,7 +33,7 @@ game/                           the Godot 4.7 .NET project: scenes/, scripts/; g
 
 ```
 dotnet build
-dotnet run --project tests/Undercurrent.Core.Tests            # all tests (39 at M2)
+dotnet run --project tests/Undercurrent.Core.Tests            # all tests (43)
 dotnet run --project tests/Undercurrent.Core.Tests -- Counter  # filter by name
 dotnet run --project tools/Undercurrent.Sim -- --battles 500   # balance numbers
 dotnet run --project tools/Undercurrent.Sim -- --log 3         # one battle's full log
@@ -91,8 +91,8 @@ test and sim projects use RollForward=Major.
 - M2 done: Godot project in game/ with a 3D board from map heights, a rotating 30 degree camera,
   placeholder billboard units, move, every ability with area and forecast on hover, facing, enemy
   turns via EnemyAi, victory or defeat with replay. The HUD is minimal on purpose.
-- Known gaps: the AI ignores how dangerous a tile is (fragile casters walk into the open); hit
-  chances run 93 to 100% with current stats; mastery, switching, items, revives and most of the 25
-  classes aren't in the library yet.
+- Known gaps: AI-vs-AI wins on ashfield-test lean to the player side (about 94%) since the AI weighs
+  tile danger; hit chances run 93 to 100% with current stats; mastery, switching, items, revives and
+  most of the 25 classes aren't in the library yet.
 - Next, M3: the full battle UI (attack preview panel, turn order strip, statuses), prologue battle
   playable end to end.

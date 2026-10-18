@@ -119,8 +119,9 @@ from high ground · act-only abilities · deterministic battles from a seed.
 
 ## Known gaps
 
-- The AI doesn't weigh how dangerous a tile is, so fragile casters walk into the open
-  (the simulator shows the Elementalist falling in every battle). First thing to improve.
+- The AI now weighs tile danger, which cut the Elementalist's falls from 100% to about 60% in the
+  simulator but swung AI-vs-AI wins on ashfield-test from 35% to about 94% for the player side, whose
+  ranged line benefits most from careful play. Rebalance alongside the hit chance tuning.
 - Hit chances come out at 93 to 100% with current stats. Worth tuning in `rules.json` or unit stats.
 - Not yet in: class mastery and switching, borrowed abilities, items, revives, Exposed sources,
   the remaining statuses and classes, difficulty modes.

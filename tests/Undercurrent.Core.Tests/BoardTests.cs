@@ -228,6 +228,64 @@ public static class AiTests
         var plan = EnemyAi.Plan(b);
         Assert.Equal((Point?)v.Position, plan.Target, "targets the challenger");
     }
+
+    [Test]
+    public static void Danger_counts_foes_that_can_reach_the_tile_next_turn()
+    {
+        var b = Battle();
+        var el = b.Add("elementalist", Team.Player, 0, 7).First();
+        var t = b.Add("trooper", Team.Enemy, 7, 0);
+        b.Start();
+        Assert.Equal(0.0, EnemyAi.Danger(b, el, new Point(0, 7)), "out of the trooper's move plus reach");
+        int hit = t.Stats.Hit - (el.EffectiveSpeed(b.Rules) - b.Rules.HitSpeedPivot) * b.Rules.HitSpeedFactor;
+        double expected = hit / 100.0 * Core.Battles.Battle.RawDamage(t, el, Ability("attack"));
+        Assert.True(Math.Abs(EnemyAi.Danger(b, el, new Point(7, 4)) - expected) < 0.01, "four tiles away: three moves and a swing");
+        Assert.Equal(0.0, EnemyAi.Danger(b, el, new Point(7, 5)), "five tiles away is safe");
+
+        t.SetStatus(StatusId.Stunned, 1);
+        Assert.Equal(0.0, EnemyAi.Danger(b, el, new Point(7, 4)), "a stunned foe loses its turn");
+    }
+
+    [Test]
+    public static void Fragile_casters_do_not_step_into_lethal_danger_to_cast()
+    {
+        var b = Battle();
+        var el = b.Add("elementalist", Team.Player, 3, 7).First();
+        b.Add("trooper", Team.Enemy, 3, 2);
+        b.Add("cutthroat", Team.Enemy, 6, 2); // spread out, so no Flame Burst catches two of them
+        b.Add("rifleman", Team.Enemy, 0, 1);
+        b.Start();
+        el.Resource = 100;
+        var plan = EnemyAi.Plan(b);
+        Assert.True(EnemyAi.Danger(b, el, plan.Destination) < el.Hp * b.Rules.AiLethalDangerShare,
+            $"ends on a survivable tile (planned {plan.Destination}, {plan.AbilityId ?? "no ability"})");
+    }
+
+    [Test]
+    public static void Units_that_fight_at_range_hold_back_instead_of_walking_into_melee()
+    {
+        var b = Battle();
+        var el = b.Add("elementalist", Team.Player, 3, 7).First();
+        var t = b.Add("trooper", Team.Enemy, 3, 0);
+        b.Start();
+        el.Resource = 0; // nothing to cast, so it repositions
+        var plan = EnemyAi.Plan(b);
+        Assert.Equal(null, plan.AbilityId, "nothing to cast");
+        Assert.True(plan.Destination.DistanceTo(t.Position) >= 3, $"keeps its distance (went to {plan.Destination})");
+    }
+
+    [Test]
+    public static void Safe_kills_are_still_taken()
+    {
+        var b = Battle();
+        var t = b.Add("trooper", Team.Enemy, 3, 3).First();
+        var a = b.Add("acolyte", Team.Player, 3, 5);
+        b.Start();
+        a.Hp = 5;
+        var plan = EnemyAi.Plan(b);
+        Assert.Equal("attack", plan.AbilityId, "attacks");
+        Assert.Equal((Point?)a.Position, plan.Target, "the wounded acolyte");
+    }
 }
 
 public static class DataTests

@@ -547,5 +547,6 @@ revive items also exist, but are rare and expensive.
 
 - [ ] Unique classes for the main character and story comrades
 - [ ] Exact numbers: stat ranges, stat minimums for unlocks, deed counts, ability costs
-- [ ] AI that weighs tile danger (fragile casters currently walk into the open)
+- [x] AI that weighs tile danger: expected damage foes could deal on a tile next turn, with a large penalty past
+  `aiLethalDangerShare` of current HP (weights in `rules.json`). Casters with ranged spells hold back like guns.
 - [ ] Hit chance tuning: current stats give 93 to 100%
